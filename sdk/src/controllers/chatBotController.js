@@ -25,6 +25,8 @@ export class ChatbotController {
         this.#chatbotView.renderWelcomeBubble();
         this.#chatbotView.setInputEnabled(true);
         this.#chatbotView.appendBotMessage(firstBotMessage, null, false);
+
+        return this.#promptService.init(text);
     }
 
     #setupEvents() {
@@ -42,8 +44,11 @@ export class ChatbotController {
         console.log('received', userMsg)
         this.#chatbotView.showTypingIndicator();
         this.#chatbotView.setInputEnabled(false);
+
+        const response = await this.#promptService.prompt(userMsg);
+
         setTimeout(() => {
-            this.#chatbotView.appendBotMessage("Opa! Ainda não estou pronto para isso.", null, false);
+            this.#chatbotView.appendBotMessage(response);
             this.#chatbotView.setInputEnabled(true);
             this.#chatbotView.hideTypingIndicator();
         }, 500);
