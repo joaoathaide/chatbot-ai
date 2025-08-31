@@ -41,18 +41,35 @@ export class ChatbotController {
     }
 
     async #chatBotReply(userMsg) {
-        console.log('received', userMsg)
         this.#chatbotView.showTypingIndicator();
         this.#chatbotView.setInputEnabled(false);
 
-        const response = await this.#promptService.prompt(userMsg);
+        let fullResponse = '';
+        let lastMessage = 'noop';
+        const contentNode = this.#chatbotView.createStreamingBotMessage();
+        const response = this.#promptService.prompt(userMsg);
+        const updateText = () => {
+            if (!fullResponse) return
+            if (fullResponse === lastMessage) return
 
-        setTimeout(() => {
-            this.#chatbotView.appendBotMessage(response);
-            this.#chatbotView.setInputEnabled(true);
+            lastMessage = fullResponse;
             this.#chatbotView.hideTypingIndicator();
-        }, 500);
+            this.#chatbotView.updateStreamingBotMessage(contentNode, fullResponse);
+        };
+        const intervalId = setInterval(updateText, 200);
+        const stopGenerating = () => {
+            clearInterval(intervalId);
+            updateText();
+            this.#chatbotView.setInputEnabled(true);
+        };
 
+        for await (const chunk of response) {
+            if (!chunk) continue
+
+            fullResponse += chunk
+        }
+
+        stopGenerating();
     }
 
     async #onOpen() {
